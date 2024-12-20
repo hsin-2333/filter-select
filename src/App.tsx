@@ -1,7 +1,7 @@
 import { DeleteOutlined, FilterOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, Input, Modal, Select, Space } from "antd";
 import { useState } from "react";
-import { Control, Controller, useFieldArray, useForm } from "react-hook-form";
+import { Control, Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 interface FilterField {
   key: string;
@@ -91,7 +91,82 @@ interface FilterRowProps {
   control: Control<FilterFormData>;
   onDelete: () => void;
 }
-const FilterRow = ({ index, control, onDelete }: FilterRowProps) => {
+function FilterRow({ index, control, onDelete }: FilterRowProps) {
+  const filterKey = useWatch({ control, name: `filters.${index}.key` });
+  const renderSelectorByStatus = () => {
+    switch (filterKey) {
+      case "Status":
+        return (
+          <Controller
+            name={`filters.${index}.values`}
+            control={control}
+            render={({ field }) => (
+              <Select
+                {...field}
+                mode="multiple"
+                style={{ width: "100%" }}
+                options={StatusOptions.map((option) => ({
+                  value: option,
+                  label: option,
+                }))}
+              />
+            )}
+          />
+        );
+
+      case "Parent ID":
+        return (
+          <Controller
+            name={`filters.${index}.values`}
+            control={control}
+            render={({ field }) => (
+              <Select
+                {...field}
+                mode="multiple"
+                style={{ width: "100%" }}
+                options={StatusOptions.map((option) => ({
+                  value: option,
+                  label: option,
+                }))}
+              />
+            )}
+          />
+        );
+      case "Size":
+        return (
+          <Space.Compact
+            style={{
+              width: "100%",
+            }}
+          >
+            <Select defaultValue="≥" options={OperatorOptions} />
+            <Input defaultValue="6.38" />
+            <Select placeholder="GIB" options={SizeOptions.map((option) => ({ value: option, label: option }))} />
+          </Space.Compact>
+        );
+      case "Activated":
+        return (
+          <Controller
+            name={`filters.${index}.values`}
+            control={control}
+            render={({ field }) => (
+              <Select
+                {...field}
+                style={{ width: "100%" }}
+                options={ActivatedOptions.map((option) => ({
+                  value: option,
+                  label: option,
+                }))}
+              />
+            )}
+          />
+        );
+
+      default:
+        return <Select style={{ width: "100%" }} disabled placeholder="Select" />;
+    }
+  };
+
   return (
     <>
       <Flex gap="small">
@@ -102,23 +177,17 @@ const FilterRow = ({ index, control, onDelete }: FilterRowProps) => {
             <Select
               {...field}
               placeholder="Filter"
+              value={field.value || undefined}
               options={FilterOptions.map((option) => ({ value: option, label: option }))}
             />
           )}
         />
-        <Space.Compact
-          style={{
-            width: "100%",
-          }}
-        >
-          <Select defaultValue="≥" options={OperatorOptions} />
-          <Input defaultValue="6.38" />
-          <Select placeholder="GIB" options={SizeOptions.map((option) => ({ value: option, label: option }))} />
-        </Space.Compact>
+
+        {renderSelectorByStatus()}
 
         <Button icon={<DeleteOutlined />} type="link" onClick={onDelete} />
       </Flex>
     </>
   );
-};
+}
 export default App;
