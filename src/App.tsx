@@ -1,7 +1,7 @@
 import { DeleteOutlined, FilterOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, InputNumber, Modal, Select, Space } from "antd";
 import { useState } from "react";
-import { Control, Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Control, Controller, useFieldArray, useForm, UseFormSetValue, useWatch } from "react-hook-form";
 
 interface FilterField {
   key: string;
@@ -66,7 +66,7 @@ function FilterModal({
   onSave: (filters: FilterField[]) => void;
   onClose: () => void;
 }) {
-  const { control, handleSubmit, reset, watch } = useForm<FilterFormData>({
+  const { control, handleSubmit, reset, watch, setValue } = useForm<FilterFormData>({
     defaultValues: {
       filters: lastConfirmedFilters.length > 0 ? lastConfirmedFilters : [EmptyFilter],
     },
@@ -136,6 +136,7 @@ function FilterModal({
               control={control}
               onDelete={() => remove(index)}
               selectedKeys={selectedKeys}
+              setValue={setValue}
             />
           ))}
 
@@ -155,8 +156,9 @@ interface FilterRowProps {
   control: Control<FilterFormData>;
   onDelete: () => void;
   selectedKeys: string[];
+  setValue: UseFormSetValue<FilterFormData>;
 }
-function FilterRow({ index, control, onDelete, selectedKeys }: FilterRowProps) {
+function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterRowProps) {
   const filterKey = useWatch({ control, name: `filters.${index}.key` });
 
   return (
@@ -165,24 +167,34 @@ function FilterRow({ index, control, onDelete, selectedKeys }: FilterRowProps) {
         name={`filters.${index}.key`}
         control={control}
         defaultValue=""
-        render={({ field }) => (
-          <Select
-            {...field}
-            placeholder="Filter"
-            style={{ width: 120 }}
-            options={FilterOptions.map((option) => ({
-              value: option,
-              label: option,
-              disabled: selectedKeys.includes(option) && option !== filterKey,
-            }))}
-          />
-        )}
+        render={({ field }) => {
+          const originalOnChange = field.onChange;
+          return (
+            <Select
+              {...field}
+              placeholder="Filter"
+              style={{ width: 120 }}
+              options={FilterOptions.map((option) => ({
+                value: option,
+                label: option,
+                disabled: selectedKeys.includes(option) && option !== filterKey,
+              }))}
+              onChange={(newKey) => {
+                originalOnChange(newKey);
+                if (newKey === "Activated") {
+                  setValue(`filters.${index}.values`, [true]);
+                } else if (newKey === "Size") {
+                  setValue(`filters.${index}.operator`, "ge");
+                }
+              }}
+            />
+          );
+        }}
       />
 
       <Controller
         name={`filters.${index}.operator`}
         control={control}
-        defaultValue="in"
         render={({ field }) => {
           const isSize = filterKey === "Size";
           return <>{isSize && <Select {...field} style={{ width: 60 }} options={OperatorOptions} />}</>;
@@ -192,7 +204,8 @@ function FilterRow({ index, control, onDelete, selectedKeys }: FilterRowProps) {
       <Controller
         name={`filters.${index}.values`}
         control={control}
-        defaultValue={[]}
+        // defaultValue={[]}
+        defaultValue={filterKey === "Activated" ? [true] : []}
         render={({ field }) => {
           switch (filterKey) {
             case "Status":
