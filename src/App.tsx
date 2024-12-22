@@ -6,7 +6,7 @@ import { Control, Controller, useFieldArray, useForm, useWatch } from "react-hoo
 interface FilterField {
   key: string;
   operator: string;
-  values: (string | number)[];
+  values: (string | number | boolean)[];
   unit?: string;
 }
 
@@ -40,7 +40,12 @@ function App() {
 
   return (
     <>
-      <Button icon={<FilterOutlined />} type="link" onClick={() => setIsModalOpen(true)}></Button>
+      <Button
+        icon={<FilterOutlined />}
+        type="link"
+        onClick={() => setIsModalOpen(true)}
+        style={{ border: isModalOpen ? "1px solid #1677FF" : "none" }}
+      ></Button>
       {isModalOpen && (
         <FilterModal
           lastConfirmedFilters={lastConfirmedFilters}
@@ -61,7 +66,7 @@ function FilterModal({
   onSave: (filters: FilterField[]) => void;
   onClose: () => void;
 }) {
-  const { control, handleSubmit, reset } = useForm<FilterFormData>({
+  const { control, handleSubmit, reset, watch } = useForm<FilterFormData>({
     defaultValues: {
       filters: lastConfirmedFilters.length > 0 ? lastConfirmedFilters : [EmptyFilter],
     },
@@ -71,6 +76,13 @@ function FilterModal({
     control,
     name: "filters",
   });
+
+  const selectedKeys = watch("filters")
+    .map((filter) => filter.key)
+    .filter(Boolean);
+
+  const filterRowCount = watch("filters").length;
+  const isBelowRowLimit = filterRowCount < FilterOptions.length;
 
   console.log(" fields ==============", fields);
 
@@ -118,12 +130,20 @@ function FilterModal({
       <form>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           {fields.map((field, index) => (
-            <FilterRow key={field.id} index={index} control={control} onDelete={() => remove(index)} />
+            <FilterRow
+              key={field.id}
+              index={index}
+              control={control}
+              onDelete={() => remove(index)}
+              selectedKeys={selectedKeys}
+            />
           ))}
 
-          <Button type="link" icon={<PlusOutlined />} onClick={() => append(EmptyFilter)}>
-            Add filter
-          </Button>
+          {isBelowRowLimit && (
+            <Button type="link" icon={<PlusOutlined />} onClick={() => append(EmptyFilter)}>
+              Add filter
+            </Button>
+          )}
         </Space>
       </form>
     </Modal>
@@ -134,8 +154,9 @@ interface FilterRowProps {
   index: number;
   control: Control<FilterFormData>;
   onDelete: () => void;
+  selectedKeys: string[];
 }
-function FilterRow({ index, control, onDelete }: FilterRowProps) {
+function FilterRow({ index, control, onDelete, selectedKeys }: FilterRowProps) {
   const filterKey = useWatch({ control, name: `filters.${index}.key` });
 
   return (
@@ -149,7 +170,11 @@ function FilterRow({ index, control, onDelete }: FilterRowProps) {
             {...field}
             placeholder="Filter"
             style={{ width: 120 }}
-            options={FilterOptions.map((v) => ({ value: v, label: v }))}
+            options={FilterOptions.map((option) => ({
+              value: option,
+              label: option,
+              disabled: selectedKeys.includes(option) && option !== filterKey,
+            }))}
           />
         )}
       />
@@ -188,7 +213,7 @@ function FilterRow({ index, control, onDelete }: FilterRowProps) {
                 <InputNumber
                   style={{ width: 180 }}
                   placeholder="enter size"
-                  value={field.value[0] ?? undefined}
+                  value={typeof field.value[0] === "number" ? field.value[0] : undefined}
                   onChange={(value) => field.onChange([value])}
                 />
               );
@@ -223,7 +248,7 @@ function FilterRow({ index, control, onDelete }: FilterRowProps) {
         }}
       />
 
-      <Button type="link" icon={<DeleteOutlined />} onClick={onDelete} />
+      <Button type="text" icon={<DeleteOutlined />} disabled={!filterKey} onClick={onDelete} />
     </Flex>
   );
 }
