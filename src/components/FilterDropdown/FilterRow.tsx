@@ -1,7 +1,6 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Button, Flex, InputNumber, Select, Space } from "antd";
 import { Control, Controller, UseFormSetValue, useWatch } from "react-hook-form";
-import CustomTag from "../../components/CustomTag";
 import {
   ActivatedOptions,
   FilterOptions,
@@ -11,6 +10,7 @@ import {
   StatusOptions,
 } from "../../constants/filterOptions";
 import { FilterFormData } from "../../types";
+import CustomTag from "../CustomTag";
 
 interface FilterRowProps {
   index: number;

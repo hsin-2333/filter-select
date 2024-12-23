@@ -1,11 +1,11 @@
 import { PlusOutlined } from "@ant-design/icons";
-import { Button, Modal, Space } from "antd";
+import { Button, Divider, Space } from "antd";
 import { useFieldArray, useForm } from "react-hook-form";
 import { EmptyFilter, FilterOptions, KeyMap, UnitMultipliers } from "../../constants/filterOptions";
 import { FilterField, FilterFormData, TransformedFilters } from "../../types";
 import FilterRow from "./FilterRow";
 
-function FilterModal({
+function FilterDropdownContent({
   lastConfirmedFilters,
   onSave,
   onClose,
@@ -64,6 +64,7 @@ function FilterModal({
   };
 
   const handleCancel = () => {
+    reset({ filters: lastConfirmedFilters });
     onClose();
   };
 
@@ -81,22 +82,7 @@ function FilterModal({
   };
 
   return (
-    <Modal
-      title="Filter"
-      closable={false}
-      open={true}
-      footer={[
-        <Button key="back" type="text" onClick={handleClearAll}>
-          Clear all
-        </Button>,
-        <Button key="cancel" onClick={handleCancel}>
-          Cancel
-        </Button>,
-        <Button key="confirm" type="primary" onClick={handleSubmit(onSubmit)}>
-          Confirm
-        </Button>,
-      ]}
-    >
+    <div>
       <form>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           {fields.map((field, index) => (
@@ -117,8 +103,20 @@ function FilterModal({
           )}
         </Space>
       </form>
-    </Modal>
+      <Divider />
+      <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+        <Button key="back" type="text" onClick={handleClearAll}>
+          Clear all
+        </Button>
+        <Button key="cancel" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button key="confirm" type="primary" onClick={handleSubmit(onSubmit)}>
+          Confirm
+        </Button>
+      </Space>
+    </div>
   );
 }
 
-export default FilterModal;
+export default FilterDropdownContent;

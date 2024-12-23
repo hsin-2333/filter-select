@@ -1,13 +1,13 @@
 import { FilterOutlined } from "@ant-design/icons";
-import { Button } from "antd";
+import { Button, Dropdown } from "antd";
 import { useEffect, useState } from "react";
-import FilterModal from "./components/FilterModal";
+import FilterDropdownContent from "./components/FilterDropdown/FilterDropdownContent";
 import { EmptyFilter } from "./constants/filterOptions";
 import { FilterField } from "./types";
 import { decodeFilters, encodeFilters } from "./utils/urlFunctions";
 
 function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [lastConfirmedFilters, setLastConfirmedFilters] = useState<FilterField[]>(() => {
     const params = new URLSearchParams(window.location.search);
     const filterParam = params.get("filters");
@@ -39,21 +39,33 @@ function App() {
   const hasFilters = lastConfirmedFilters.length > 0 && lastConfirmedFilters[0].key !== "";
 
   return (
-    <>
+    <Dropdown
+      trigger={["click"]}
+      placement="bottomLeft"
+      overlayStyle={{
+        width: 500,
+        padding: 16,
+        boxShadow:
+          "0px 3px 6px -4px rgba(0, 0, 0, 0.12), 0px 6px 16px 0px rgba(0, 0, 0, 0.08), 0px 9px 28px 8px rgba(0, 0, 0, 0.05)",
+        borderRadius: 8,
+      }}
+      dropdownRender={() => (
+        <FilterDropdownContent
+          lastConfirmedFilters={lastConfirmedFilters}
+          onSave={handleSaveFilters}
+          onClose={() => setIsDropdownOpen(false)}
+        />
+      )}
+      open={isDropdownOpen}
+      onOpenChange={(open) => setIsDropdownOpen(open)}
+      arrow
+    >
       <Button
         icon={<FilterOutlined />}
         type="link"
-        onClick={() => setIsModalOpen(true)}
-        style={{ border: isModalOpen || hasFilters ? "1px solid #1677FF" : "none" }}
+        style={{ border: hasFilters ? "1px solid #1677FF" : "none" }}
       ></Button>
-      {isModalOpen && (
-        <FilterModal
-          lastConfirmedFilters={lastConfirmedFilters}
-          onSave={handleSaveFilters}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-    </>
+    </Dropdown>
   );
 }
 
