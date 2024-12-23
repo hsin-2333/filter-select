@@ -2,6 +2,7 @@ import { DeleteOutlined, FilterOutlined, PlusOutlined } from "@ant-design/icons"
 import { Button, Flex, InputNumber, Modal, Select, Space } from "antd";
 import { useState } from "react";
 import { Control, Controller, useFieldArray, useForm, UseFormSetValue, useWatch } from "react-hook-form";
+import CustomTag from "./components/CustomTag";
 
 interface FilterField {
   key: string;
@@ -24,6 +25,7 @@ const EmptyFilter: FilterField = {
 const FilterOptions = ["Status", "Parent ID", "Size", "Activated"];
 const SizeOptions = ["MiB", "GiB", "TiB", "PiB"];
 const StatusOptions = ["Online", "Offline", "Rebuild", "Failed", "Missing"];
+const ParentOptions = ["P-0", "P-1", "P-2"];
 const ActivatedOptions = [
   { value: true, label: "On" },
   { value: false, label: "Off" },
@@ -204,12 +206,10 @@ function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterR
       <Controller
         name={`filters.${index}.values`}
         control={control}
-        // defaultValue={[]}
         defaultValue={filterKey === "Activated" ? [true] : []}
         render={({ field }) => {
           switch (filterKey) {
             case "Status":
-            case "Parent ID":
               return (
                 <Select
                   {...field}
@@ -219,6 +219,20 @@ function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterR
                     value: option,
                     label: option,
                   }))}
+                  tagRender={CustomTag}
+                />
+              );
+            case "Parent ID":
+              return (
+                <Select
+                  {...field}
+                  mode="multiple"
+                  style={{ width: 180 }}
+                  options={ParentOptions.map((option) => ({
+                    value: option,
+                    label: option,
+                  }))}
+                  tagRender={CustomTag}
                 />
               );
             case "Size":
