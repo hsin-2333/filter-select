@@ -15,6 +15,27 @@ interface FilterFormData {
   filters: FilterField[];
 }
 
+interface TransformedFilters {
+  [key: string]: {
+    operator: string;
+    values: (string | number | boolean)[];
+  };
+}
+
+const UnitMultipliers: Record<string, number> = {
+  MiB: 1024 * 1024,
+  GiB: 1024 * 1024 * 1024,
+  TiB: 1024 * 1024 * 1024 * 1024,
+  PiB: 1024 * 1024 * 1024 * 1024 * 1024,
+};
+
+const KeyMap: Record<string, string> = {
+  Status: "status",
+  "Parent ID": "parent_id",
+  Size: "size",
+  Activated: "activated",
+};
+
 const EmptyFilter: FilterField = {
   key: "",
   operator: "in",
@@ -86,7 +107,30 @@ function FilterModal({
   const filterRowCount = watch("filters").length;
   const isBelowRowLimit = filterRowCount < FilterOptions.length;
 
-  console.log(" fields ==============", fields);
+  const transformFilters = (filters: FilterField[]): TransformedFilters => {
+    const result: TransformedFilters = {};
+
+    filters.forEach((filter) => {
+      if (!filter.key || !filter.values.length) return;
+
+      const mappedKey = KeyMap[filter.key] ?? filter.key.toLowerCase();
+      const operator = filter.operator || "in";
+
+      let finalValues = filter.values;
+
+      if (mappedKey === "size" && finalValues.length > 0) {
+        const multiplier = filter.unit && UnitMultipliers[filter.unit] ? UnitMultipliers[filter.unit] : 1;
+        finalValues = finalValues.map((val) => (typeof val === "number" ? val * multiplier : val));
+      }
+
+      result[mappedKey] = {
+        operator,
+        values: finalValues,
+      };
+    });
+
+    return result;
+  };
 
   const handleClearAll = () => {
     reset({ filters: [EmptyFilter] });
@@ -99,17 +143,16 @@ function FilterModal({
   };
 
   const onSubmit = (data: FilterFormData) => {
-    const validated = data.filters.filter((f) => {
-      return f.key && Array.isArray(f.values) && f.values.length > 0;
-    });
+    const validated = data.filters.filter((f) => f.key && Array.isArray(f.values) && f.values.length > 0);
+
     const finalData = validated.length > 0 ? validated : [EmptyFilter];
+
+    const transformed = transformFilters(finalData);
+    console.log("transformed Data =========", transformed);
 
     onSave(finalData);
     reset({ filters: finalData });
     onClose();
-
-    console.log("data ===========", data);
-    console.log("finalData =========", finalData);
   };
 
   return (
