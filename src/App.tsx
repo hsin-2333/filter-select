@@ -1,6 +1,6 @@
 import { DeleteOutlined, FilterOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, InputNumber, Modal, Select, Space } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Control, Controller, useFieldArray, useForm, UseFormSetValue, useWatch } from "react-hook-form";
 import CustomTag from "./components/CustomTag";
 
@@ -57,9 +57,50 @@ const OperatorOptions = [
   { value: "le", label: "≤" },
 ];
 
+const encodeFilters = (filters: FilterField[]): string => {
+  const validFilters = filters.filter((f) => f.key && f.values.length > 0);
+  if (validFilters.length === 0) return "";
+  return encodeURIComponent(JSON.stringify(validFilters));
+};
+
+const decodeFilters = (paramValue: string): FilterField[] => {
+  try {
+    const decoded = JSON.parse(decodeURIComponent(paramValue));
+    return Array.isArray(decoded) ? decoded : [EmptyFilter];
+  } catch {
+    return [EmptyFilter];
+  }
+};
+
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [lastConfirmedFilters, setLastConfirmedFilters] = useState<FilterField[]>([]);
+  const [lastConfirmedFilters, setLastConfirmedFilters] = useState<FilterField[]>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filterParam = params.get("filters");
+    return filterParam ? decodeFilters(filterParam) : [EmptyFilter];
+  });
+
+  const updateURL = (filters: FilterField[]) => {
+    const encodedFilters = encodeFilters(filters);
+    const newURL = encodedFilters ? `${window.location.pathname}?filters=${encodedFilters}` : window.location.pathname;
+    window.history.pushState({}, "", newURL);
+  };
+
+  const handleSaveFilters = (newFilters: FilterField[]) => {
+    setLastConfirmedFilters(newFilters);
+    updateURL(newFilters);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const filterParam = params.get("filters");
+      setLastConfirmedFilters(filterParam ? decodeFilters(filterParam) : [EmptyFilter]);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   return (
     <>
@@ -72,7 +113,7 @@ function App() {
       {isModalOpen && (
         <FilterModal
           lastConfirmedFilters={lastConfirmedFilters}
-          onSave={(newFilters) => setLastConfirmedFilters(newFilters)}
+          onSave={handleSaveFilters}
           onClose={() => setIsModalOpen(false)}
         />
       )}
