@@ -36,13 +36,15 @@ function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  const hasFilters = lastConfirmedFilters.length > 0 && lastConfirmedFilters[0].key !== "";
+
   return (
     <>
       <Button
         icon={<FilterOutlined />}
         type="link"
         onClick={() => setIsModalOpen(true)}
-        style={{ border: isModalOpen ? "1px solid #1677FF" : "none" }}
+        style={{ border: isModalOpen || hasFilters ? "1px solid #1677FF" : "none" }}
       ></Button>
       {isModalOpen && (
         <FilterModal

@@ -1,5 +1,5 @@
 import { DeleteOutlined } from "@ant-design/icons";
-import { Button, Flex, InputNumber, Select } from "antd";
+import { Button, Flex, InputNumber, Select, Space } from "antd";
 import { Control, Controller, UseFormSetValue, useWatch } from "react-hook-form";
 import CustomTag from "../../components/CustomTag";
 import {
@@ -23,6 +23,35 @@ interface FilterRowProps {
 function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterRowProps) {
   const filterKey = useWatch({ control, name: `filters.${index}.key` });
 
+  const renderFilterValues = () => {
+    switch (filterKey) {
+      case "Size":
+        return <SizeFilterValues index={index} control={control} />;
+      case "Status":
+        return (
+          <SelectFilterValues
+            index={index}
+            control={control}
+            options={StatusOptions.map((option) => ({ value: option, label: option }))}
+            multiple
+          />
+        );
+      case "Parent ID":
+        return (
+          <SelectFilterValues
+            index={index}
+            control={control}
+            options={ParentOptions.map((option) => ({ value: option, label: option }))}
+            multiple
+          />
+        );
+      case "Activated":
+        return <SelectFilterValues index={index} control={control} options={ActivatedOptions} />;
+      default:
+        return <Select disabled style={{ width: "100%" }} placeholder="Select" />;
+    }
+  };
+
   return (
     <Flex gap="small">
       <Controller
@@ -34,8 +63,9 @@ function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterR
           return (
             <Select
               {...field}
+              value={field.value === "" ? undefined : field.value}
               placeholder="Filter"
-              style={{ width: 120 }}
+              style={{ width: 136 }}
               options={FilterOptions.map((option) => ({
                 value: option,
                 label: option,
@@ -54,90 +84,69 @@ function FilterRow({ index, control, onDelete, selectedKeys, setValue }: FilterR
         }}
       />
 
-      <Controller
-        name={`filters.${index}.operator`}
-        control={control}
-        render={({ field }) => {
-          const isSize = filterKey === "Size";
-          return <>{isSize && <Select {...field} style={{ width: 60 }} options={OperatorOptions} />}</>;
-        }}
-      />
-
-      <Controller
-        name={`filters.${index}.values`}
-        control={control}
-        defaultValue={filterKey === "Activated" ? [true] : []}
-        render={({ field }) => {
-          switch (filterKey) {
-            case "Status":
-              return (
-                <Select
-                  {...field}
-                  mode="multiple"
-                  style={{ width: 180 }}
-                  options={StatusOptions.map((option) => ({
-                    value: option,
-                    label: option,
-                  }))}
-                  tagRender={CustomTag}
-                />
-              );
-            case "Parent ID":
-              return (
-                <Select
-                  {...field}
-                  mode="multiple"
-                  style={{ width: 180 }}
-                  options={ParentOptions.map((option) => ({
-                    value: option,
-                    label: option,
-                  }))}
-                  tagRender={CustomTag}
-                />
-              );
-            case "Size":
-              return (
-                <InputNumber
-                  style={{ width: 180 }}
-                  placeholder="enter size"
-                  value={typeof field.value[0] === "number" ? field.value[0] : undefined}
-                  onChange={(value) => field.onChange([value])}
-                />
-              );
-            case "Activated":
-              return (
-                <Select
-                  {...field}
-                  style={{ width: 180 }}
-                  options={ActivatedOptions}
-                  onChange={(value) => field.onChange([value])}
-                />
-              );
-            default:
-              return <Select {...field} disabled style={{ width: 180 }} placeholder="Select" />;
-          }
-        }}
-      />
-
-      <Controller
-        name={`filters.${index}.unit`}
-        control={control}
-        defaultValue="GiB"
-        render={({ field }) => {
-          const isSize = filterKey === "Size";
-          return (
-            <>
-              {isSize && (
-                <Select {...field} style={{ width: 80 }} options={SizeOptions.map((s) => ({ value: s, label: s }))} />
-              )}
-            </>
-          );
-        }}
-      />
+      <div style={{ flexGrow: 1 }}>{renderFilterValues()}</div>
 
       <Button type="text" icon={<DeleteOutlined />} disabled={!filterKey} onClick={onDelete} />
     </Flex>
   );
 }
 
+const SizeFilterValues = ({ index, control }: { index: number; control: Control<FilterFormData> }) => {
+  return (
+    <Space.Compact style={{ display: "flex", width: "100%" }}>
+      <Controller
+        name={`filters.${index}.operator`}
+        control={control}
+        render={({ field }) => <Select {...field} style={{ width: 80 }} options={OperatorOptions} />}
+      />
+      <Controller
+        name={`filters.${index}.values`}
+        control={control}
+        render={({ field }) => (
+          <InputNumber
+            style={{ flexGrow: 1 }}
+            placeholder="enter size number"
+            value={typeof field.value[0] === "number" ? field.value[0] : undefined}
+            onChange={(value) => field.onChange([value])}
+          />
+        )}
+      />
+      <Controller
+        name={`filters.${index}.unit`}
+        control={control}
+        defaultValue="GiB"
+        render={({ field }) => (
+          <Select {...field} style={{ width: 80 }} options={SizeOptions.map((s) => ({ value: s, label: s }))} />
+        )}
+      />
+    </Space.Compact>
+  );
+};
+
+const SelectFilterValues = ({
+  index,
+  control,
+  options,
+  multiple = false,
+}: {
+  index: number;
+  control: Control<FilterFormData>;
+  options: { value: string | boolean; label: string }[];
+  multiple?: boolean;
+}) => (
+  <Controller
+    name={`filters.${index}.values`}
+    control={control}
+    render={({ field }) => (
+      <Select
+        {...field}
+        style={{ width: "100%" }}
+        mode={multiple ? "multiple" : undefined}
+        options={options}
+        tagRender={multiple ? CustomTag : undefined}
+        onChange={multiple ? field.onChange : (value) => field.onChange([value])}
+      />
+    )}
+  />
+);
 export default FilterRow;
