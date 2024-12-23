@@ -10,6 +10,8 @@ This project implements a filter dropdown component using React, React Hook Form
 
 - Add filters, Clear all, Cancel, Confirm
 
+- Keep filter conditions in URL
+
 ## To be continued
 
 - Improve URL length by compressing filter conditions
